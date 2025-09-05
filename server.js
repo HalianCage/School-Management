@@ -1,6 +1,6 @@
 const express = require('express')
 const pool = require('./db')
-const { body, validationResult } = require('express-validator')
+const { query, validationResult } = require('express-validator')
 require('dotenv').config()
 const userDistance = require('./userDistance')
 
@@ -9,19 +9,19 @@ const app = express();
 
 // Data validation rules for addSchool API
 const addSchoolValidationRules = [
-    body('name')
+    query('name')
         .notEmpty().withMessage('Name is required')
         .isString().withMessage('Name must be a String'),
 
-    body('address')
+    query('address')
         .notEmpty().withMessage('Address is required')
         .isString().withMessage('Address must be a String'),
     
-    body('latitude')
+    query('latitude')
         .notEmpty().withMessage('Latitude is required')
         .isFloat({min: -90, max: 90}).withMessage('Latitude must be a valid number between -90 and 90'),
 
-    body('longitude')
+    query('longitude')
         .notEmpty().withMessage('Longitude is required')
         .isFloat({min: -180, max: 180}).withMessage('Longitude must be a valid number between -180 and 180')
     
@@ -29,11 +29,11 @@ const addSchoolValidationRules = [
 
 // Data validation rules for getSchools API
 const getSchoolValidationRules = [
-    body('latitude')
+    query('latitude')
         .notEmpty().withMessage('Latitude is required')
         .isFloat({min: -90, max: 90}).withMessage('Latitude must be a valid number between -90 and 90'),
 
-    body('longitude')
+    query('longitude')
         .notEmpty().withMessage('Longitude is required')
         .isFloat({min: -180, max: 180}).withMessage('Longitude must be a valid number between -180 and 180')
     
@@ -88,11 +88,13 @@ app.post('/addSchool', addSchoolValidationRules, payloadValidator, async (req, r
 
     try {
 
-        const { name, address, latitude, longitude } = req.body
+        const { name, address, latitude, longitude } = req.query
         
         console.log("Adding a new school to the database")
 
         const [result] = await pool.query(`INSERT INTO schools(name, address, latitude, longitude) VALUES (?, ?, ?, ?)`,[ name, address, latitude, longitude] )
+
+        console.log('Successfully added the new school to the database')
 
         res.status(201).json({
             message: 'successfully added the new school data',
@@ -112,7 +114,7 @@ app.post('/addSchool', addSchoolValidationRules, payloadValidator, async (req, r
 
 app.get('/getSchools', getSchoolValidationRules, payloadValidator, async (req, res) => {
 
-    const { latitude, longitude } = req.body
+    const { latitude, longitude } = req.query
 
     try {
 
@@ -128,6 +130,8 @@ app.get('/getSchools', getSchoolValidationRules, payloadValidator, async (req, r
 
         //sorting the list based on distance
         list_of_schools_with_dist.sort((a, b) => a.distance - b.distance)
+
+        console.log('successfully fetched the list od schools with distance')
 
         res.json(list_of_schools_with_dist)
 
